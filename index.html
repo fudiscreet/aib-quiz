@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIB-C01 一問一答 | AWS Certified AI Business Strategist 対策</title>
+<meta name="description" content="AWS Certified AI Business Strategist (AIB-C01) 予想問題 510問を一問一答形式で学習できる無料の学習サイト">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☁️</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <h1><span class="logo-badge">AIB-C01</span> 一問一答</h1>
+    <p class="subtitle">AWS Certified AI Business Strategist 予想問題集（全510問）</p>
+  </div>
+</header>
+
+<main id="app" class="app">
+
+  <!-- ===== SETUP SCREEN ===== -->
+  <section id="screen-setup" class="screen">
+    <div class="card">
+      <h2>出題設定</h2>
+
+      <div class="field-group">
+        <label class="field-label">セット</label>
+        <div class="chip-row" id="set-picker">
+          <button type="button" class="chip chip-active" data-set="all">全セット</button>
+          <button type="button" class="chip" data-set="1">Set 1</button>
+          <button type="button" class="chip" data-set="2">Set 2</button>
+          <button type="button" class="chip" data-set="3">Set 3</button>
+          <button type="button" class="chip" data-set="4">Set 4</button>
+          <button type="button" class="chip" data-set="5">Set 5</button>
+          <button type="button" class="chip" data-set="6">Set 6</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">ドメイン</label>
+        <div class="chip-row" id="domain-picker">
+          <button type="button" class="chip chip-active" data-domain="all">すべて</button>
+          <button type="button" class="chip" data-domain="1">ドメイン1: AI基礎</button>
+          <button type="button" class="chip" data-domain="2">ドメイン2: 戦略と価値</button>
+          <button type="button" class="chip" data-domain="3">ドメイン3: ガバナンス</button>
+          <button type="button" class="chip" data-domain="4">ドメイン4: 変革</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">出題順</label>
+        <div class="chip-row" id="order-picker">
+          <button type="button" class="chip chip-active" data-order="shuffle">シャッフル</button>
+          <button type="button" class="chip" data-order="sequential">順番どおり</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">問題数</label>
+        <div class="chip-row" id="count-picker">
+          <button type="button" class="chip" data-count="10">10問</button>
+          <button type="button" class="chip" data-count="20">20問</button>
+          <button type="button" class="chip chip-active" data-count="50">50問</button>
+          <button type="button" class="chip" data-count="85">85問</button>
+          <button type="button" class="chip" data-count="all">全問</button>
+        </div>
+      </div>
+
+      <p class="match-count"><span id="match-count-num">--</span> 問が対象です</p>
+
+      <button id="btn-start" class="btn btn-primary btn-large">学習を始める</button>
+
+      <div class="review-link-wrap" id="review-wrap" hidden>
+        <button id="btn-review-wrong" class="btn btn-ghost">前回の不正解を復習する（<span id="wrong-count">0</span>問）</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== QUIZ SCREEN ===== -->
+  <section id="screen-quiz" class="screen" hidden>
+    <div class="quiz-topbar">
+      <button id="btn-quit" class="btn-icon" title="設定に戻る">✕</button>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div class="progress-text"><span id="progress-current">1</span> / <span id="progress-total">50</span></div>
+      </div>
+      <div class="score-live">正答 <span id="score-correct">0</span></div>
+    </div>
+
+    <div class="card quiz-card">
+      <div class="q-meta">
+        <span id="q-tag-set" class="tag">Set 1</span>
+        <span id="q-tag-domain" class="tag tag-domain">ドメイン1</span>
+        <span id="q-tag-skill" class="tag tag-skill">Skill 1.1.1</span>
+        <span id="q-tag-multi" class="tag tag-multi" hidden>複数選択</span>
+      </div>
+
+      <p id="q-text" class="q-text"></p>
+
+      <div id="q-options" class="options"></div>
+
+      <div class="quiz-actions">
+        <button id="btn-submit" class="btn btn-primary" disabled>回答する</button>
+      </div>
+
+      <div id="answer-panel" class="answer-panel" hidden>
+        <div id="answer-verdict" class="answer-verdict"></div>
+        <p id="answer-explanation" class="answer-explanation"></p>
+        <button id="btn-next" class="btn btn-primary btn-large">次の問題 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <section id="screen-result" class="screen" hidden>
+    <div class="card result-card">
+      <h2>結果</h2>
+      <div class="result-score">
+        <span id="result-correct">0</span><span class="result-slash">/</span><span id="result-total">0</span>
+      </div>
+      <p class="result-pct" id="result-pct"></p>
+
+      <div id="result-domain-breakdown" class="result-breakdown"></div>
+
+      <div class="result-actions">
+        <button id="btn-restart" class="btn btn-primary btn-large">もう一度設定して始める</button>
+        <button id="btn-review-mistakes" class="btn btn-ghost" hidden>この回の不正解を見直す（<span id="mistake-count">0</span>問）</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>非公式の学習教材です。AWS および AWS Certified AI Business Strategist は Amazon Web Services, Inc. の商標です。問題はすべて第三者が作成した予想問題であり、実際の試験内容を保証するものではありません。</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
