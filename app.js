@@ -7,6 +7,7 @@ const state = {
   queue: [],
   index: 0,
   selected: new Set(),
+  currentAnswer: new Set(),
   answered: false,
   score: 0,
   sessionMistakeIds: [],
@@ -21,19 +22,27 @@ function loadWrongIds() {
   try {
     const raw = localStorage.getItem(WRONG_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch (e) { return new Set(); }
+  } catch (e) {
+    return new Set();
+  }
 }
 function saveWrongIds(set) {
-  try { localStorage.setItem(WRONG_KEY, JSON.stringify([...set])); } catch (e) {}
+  try {
+    localStorage.setItem(WRONG_KEY, JSON.stringify([...set]));
+  } catch (e) {}
 }
 function saveLastMistakes(ids) {
-  try { localStorage.setItem(LAST_MISTAKES_KEY, JSON.stringify(ids)); } catch (e) {}
+  try {
+    localStorage.setItem(LAST_MISTAKES_KEY, JSON.stringify(ids));
+  } catch (e) {}
 }
 function loadLastMistakes() {
   try {
     const raw = localStorage.getItem(LAST_MISTAKES_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch (e) { return []; }
+  } catch (e) {
+    return [];
+  }
 }
 
 /* ===================== DOM refs ===================== */
@@ -89,7 +98,10 @@ function showScreen(name) {
   screenSetup.hidden = name !== "setup";
   screenQuiz.hidden = name !== "quiz";
   screenResult.hidden = name !== "result";
-  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  window.scrollTo({
+    top: 0,
+    behavior: "instant" in window ? "instant" : "auto",
+  });
 }
 
 /* ===================== Setup screen ===================== */
@@ -97,7 +109,9 @@ function wireChipRow(container, key, onChange) {
   container.addEventListener("click", (e) => {
     const btn = e.target.closest(".chip");
     if (!btn) return;
-    container.querySelectorAll(".chip").forEach((c) => c.classList.remove("chip-active"));
+    container
+      .querySelectorAll(".chip")
+      .forEach((c) => c.classList.remove("chip-active"));
     btn.classList.add("chip-active");
     onChange(btn);
     updateMatchCount();
@@ -106,8 +120,13 @@ function wireChipRow(container, key, onChange) {
 
 function getFilteredQuestions() {
   return state.all.filter((q) => {
-    if (state.filters.set !== "all" && String(q.set) !== state.filters.set) return false;
-    if (state.filters.domain !== "all" && String(q.domain) !== state.filters.domain) return false;
+    if (state.filters.set !== "all" && String(q.set) !== state.filters.set)
+      return false;
+    if (
+      state.filters.domain !== "all" &&
+      String(q.domain) !== state.filters.domain
+    )
+      return false;
     return true;
   });
 }
@@ -119,10 +138,18 @@ function updateMatchCount() {
 }
 
 function initSetupScreen() {
-  wireChipRow(setPicker, "set", (btn) => { state.filters.set = btn.dataset.set; });
-  wireChipRow(domainPicker, "domain", (btn) => { state.filters.domain = btn.dataset.domain; });
-  wireChipRow(orderPicker, "order", (btn) => { state.filters.order = btn.dataset.order; });
-  wireChipRow(countPicker, "count", (btn) => { state.filters.count = btn.dataset.count; });
+  wireChipRow(setPicker, "set", (btn) => {
+    state.filters.set = btn.dataset.set;
+  });
+  wireChipRow(domainPicker, "domain", (btn) => {
+    state.filters.domain = btn.dataset.domain;
+  });
+  wireChipRow(orderPicker, "order", (btn) => {
+    state.filters.order = btn.dataset.order;
+  });
+  wireChipRow(countPicker, "count", (btn) => {
+    state.filters.count = btn.dataset.count;
+  });
 
   const wrongIds = loadWrongIds();
   if (wrongIds.size > 0) {
@@ -175,7 +202,7 @@ function renderQuestion() {
 
   progressCurrent.textContent = state.index + 1;
   progressTotal.textContent = state.queue.length;
-  progressFill.style.width = `${((state.index) / state.queue.length) * 100}%`;
+  progressFill.style.width = `${(state.index / state.queue.length) * 100}%`;
   scoreCorrectEl.textContent = state.score;
 
   qTagSet.textContent = `Set ${q.set}`;
@@ -187,14 +214,30 @@ function renderQuestion() {
   qText.textContent = q.text;
 
   qOptions.innerHTML = "";
-  const letters = Object.keys(q.options).sort();
-  letters.forEach((letter) => {
+  const optionEntries = Object.keys(q.options)
+    .sort()
+    .map((letter) => ({ originalLetter: letter, text: q.options[letter] }));
+  if (state.filters.order === "shuffle" && !state.isReviewMode)
+    shuffleArray(optionEntries);
+
+  const displayOptions = optionEntries.map((option, index) => ({
+    letter: String.fromCharCode(65 + index),
+    text: option.text,
+    isCorrect: q.answer.includes(option.originalLetter),
+  }));
+  state.currentAnswer = new Set(
+    displayOptions
+      .filter((option) => option.isCorrect)
+      .map((option) => option.letter),
+  );
+
+  displayOptions.forEach((option) => {
     const opt = document.createElement("div");
     opt.className = "option";
-    opt.dataset.letter = letter;
-    opt.innerHTML = `<span class="option-letter">${letter}</span><span class="option-text"></span>`;
-    opt.querySelector(".option-text").textContent = q.options[letter];
-    opt.addEventListener("click", () => onOptionClick(letter, q));
+    opt.dataset.letter = option.letter;
+    opt.innerHTML = `<span class="option-letter">${option.letter}</span><span class="option-text"></span>`;
+    opt.querySelector(".option-text").textContent = option.text;
+    opt.addEventListener("click", () => onOptionClick(option.letter, q));
     qOptions.appendChild(opt);
   });
 
@@ -218,7 +261,10 @@ function onOptionClick(letter, q) {
 
 function refreshOptionSelection() {
   qOptions.querySelectorAll(".option").forEach((el) => {
-    el.classList.toggle("option-selected", state.selected.has(el.dataset.letter));
+    el.classList.toggle(
+      "option-selected",
+      state.selected.has(el.dataset.letter),
+    );
   });
 }
 
@@ -231,7 +277,7 @@ function setsEqual(a, b) {
 btnSubmit.addEventListener("click", () => {
   if (state.answered || state.selected.size === 0) return;
   const q = state.queue[state.index];
-  const correctSet = new Set(q.answer);
+  const correctSet = state.currentAnswer;
   const isCorrect = setsEqual(state.selected, correctSet);
   state.answered = true;
 
@@ -259,13 +305,15 @@ btnSubmit.addEventListener("click", () => {
   progressFill.style.width = `${((state.index + 1) / state.queue.length) * 100}%`;
 
   answerVerdict.textContent = isCorrect
-    ? `正解 ✓（正答: ${q.answer.join(", ")}）`
-    : `不正解 ✗（正答: ${q.answer.join(", ")}）`;
-  answerVerdict.className = "answer-verdict " + (isCorrect ? "verdict-correct" : "verdict-incorrect");
+    ? `正解 ✓（正答: ${[...correctSet].join(", ")}）`
+    : `不正解 ✗（正答: ${[...correctSet].join(", ")}）`;
+  answerVerdict.className =
+    "answer-verdict " + (isCorrect ? "verdict-correct" : "verdict-incorrect");
   answerExplanation.textContent = q.explanation;
 
   answerPanel.hidden = false;
-  btnNext.textContent = state.index + 1 < state.queue.length ? "次の問題 →" : "結果を見る →";
+  btnNext.textContent =
+    state.index + 1 < state.queue.length ? "次の問題 →" : "結果を見る →";
 });
 
 btnNext.addEventListener("click", () => {
@@ -278,7 +326,11 @@ btnNext.addEventListener("click", () => {
 });
 
 btnQuit.addEventListener("click", () => {
-  if (state.answered || state.index === 0 || confirm("学習を中断して設定画面に戻りますか？")) {
+  if (
+    state.answered ||
+    state.index === 0 ||
+    confirm("学習を中断して設定画面に戻りますか？")
+  ) {
     showScreen("setup");
     updateMatchCount();
   }
@@ -290,10 +342,17 @@ function finishQuiz() {
 
   resultCorrect.textContent = state.score;
   resultTotal.textContent = state.queue.length;
-  const pct = state.queue.length ? Math.round((state.score / state.queue.length) * 100) : 0;
+  const pct = state.queue.length
+    ? Math.round((state.score / state.queue.length) * 100)
+    : 0;
   resultPct.textContent = `正答率 ${pct}%`;
 
-  const byDomain = { 1: { c: 0, t: 0 }, 2: { c: 0, t: 0 }, 3: { c: 0, t: 0 }, 4: { c: 0, t: 0 } };
+  const byDomain = {
+    1: { c: 0, t: 0 },
+    2: { c: 0, t: 0 },
+    3: { c: 0, t: 0 },
+    4: { c: 0, t: 0 },
+  };
   const mistakeSet = new Set(state.sessionMistakeIds);
   state.queue.forEach((q) => {
     byDomain[q.domain].t += 1;
@@ -350,7 +409,8 @@ async function boot() {
     const res = await fetch("data/questions.json");
     state.all = await res.json();
   } catch (e) {
-    qText.textContent = "問題データの読み込みに失敗しました。ページを再読み込みしてください。";
+    qText.textContent =
+      "問題データの読み込みに失敗しました。ページを再読み込みしてください。";
     console.error(e);
     return;
   }
